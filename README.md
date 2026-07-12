@@ -1,4 +1,4 @@
-# XrayR-0.8.0-Backup final version
+# XrayR
 [![](https://img.shields.io/badge/TgChat-@XrayR讨论待开启-blue.svg)](https://t.me/)
 [![](https://img.shields.io/badge/Channel-@XrayR通知待开启-blue.svg)](https://t.me/)
 
@@ -80,4 +80,4 @@ bash <(curl -Ls https://raw.githubusercontent.com/hcw1133/XrayR/main/install.sh)
 
 ## Donation
 
-TRX&(USDT-TRC20): TJfGVA8HJzyG5vYt2zkwz2yvykgWP5svEK
+TRX&(USDT-TRC20): 
