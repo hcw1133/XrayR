@@ -109,7 +109,7 @@ install_XrayR() {
     if  [ $# == 0 ] ;then
         api_result=$(curl -fsSL https://api.github.com/repos/Git-private/XrayR-my/releases/latest)
 
-last_version=$(echo "$api_result" | grep '"tag_name"' | cut -d '"' -f4)
+        last_version=$(echo "$api_result" | grep '"tag_name"' | cut -d '"' -f4)
 
         if [[ -z "$last_version" ]]; then
             echo "GitHub API 返回："
