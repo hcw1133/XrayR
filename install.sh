@@ -32,12 +32,12 @@ fi
 arch=$(arch)
 
 if [[ $arch == "x86_64" || $arch == "x64" || $arch == "amd64" ]]; then
-    arch="amd64"
+  arch="64"
 elif [[ $arch == "aarch64" || $arch == "arm64" ]]; then
-    arch="arm64"
+  arch="arm64-v8a"
 else
-    arch="amd64"
-    echo -e "${red}检测架构失败，使用默认架构: ${arch}${plain}"
+  arch="64"
+  echo -e "${red}检测架构失败，使用默认架构: ${arch}${plain}"
 fi
 
 echo "架构: ${arch}"
@@ -106,25 +106,57 @@ install_XrayR() {
     mkdir /usr/local/XrayR/ -p
 	cd /usr/local/XrayR/
 
-    wget -q -N --no-check-certificate -O /usr/local/XrayR/XrayR https://https://github.com/Git-private/XrayR-my/releases/download/v0.9.6/${arch}
+    if  [ $# == 0 ] ;then
+        api_result=$(curl -fsSL https://api.github.com/repos/Git-private/XrayR-my/releases/latest)
 
-    chmod +x /usr/local/XrayR/XrayR
+last_version=$(echo "$api_result" | grep '"tag_name"' | cut -d '"' -f4)
+
+        if [[ -z "$last_version" ]]; then
+            echo "GitHub API 返回："
+            echo "$api_result"
+    exit 1
+        fi
+		
+        if [[ ! -n "$last_version" ]]; then
+            echo -e "${red}检测 XrayR 版本失败，可能是超出 Github API 限制，请稍后再试，或手动指定 XrayR 版本安装${plain}"
+            exit 1
+        fi
+        echo -e "检测到 XrayR 最新版本：${last_version}，开始安装"
+        wget -q -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip https://github.com/Git-private/XrayR-my/releases/download/${last_version}/XrayR-linux-${arch}.zip
+        if [[ $? -ne 0 ]]; then
+            echo -e "${red}下载 XrayR 失败，请确保你的服务器能够下载 Github 的文件${plain}"
+            exit 1
+        fi
+    else
+        last_version=$1
+        url="https://github.com/Git-private/XrayR-my/releases/download/${last_version}/XrayR-linux-${arch}.zip"
+        echo -e "开始安装 XrayR v$1"
+        wget -q -N --no-check-certificate -O /usr/local/XrayR/XrayR-linux.zip ${url}
+        if [[ $? -ne 0 ]]; then
+            echo -e "${red}下载 XrayR v$1 失败，请确保此版本存在${plain}"
+            exit 1
+        fi
+    fi
+
+    unzip XrayR-linux.zip
+    rm XrayR-linux.zip -f
+    chmod +x XrayR
     mkdir /etc/XrayR/ -p
     rm /etc/systemd/system/XrayR.service -f
-    file="https://raw.githubusercontent.com/hcw1133/xrayr/main/XrayR.service"
+    file="https://github.com/EdNovas/XrayR-release/raw/master/XrayR.service"
     wget -q -N --no-check-certificate -O /etc/systemd/system/XrayR.service ${file}
     #cp -f XrayR.service /etc/systemd/system/
     systemctl daemon-reload
     systemctl stop XrayR
     systemctl enable XrayR
-    echo -e "${green}XrayR ${plain} 安装完成，已设置开机自启"
-    wget -q -N --no-check-certificate -O /etc/XrayR/geosite.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat
-    wget -q -N --no-check-certificate -O /etc/XrayR/geoip.dat https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat
+    echo -e "${green}XrayR ${last_version}${plain} 安装完成，已设置开机自启"
+    cp geoip.dat /etc/XrayR/
+    cp geosite.dat /etc/XrayR/ 
 
     if [[ ! -f /etc/XrayR/config.yml ]]; then
-        wget -q -N --no-check-certificate -O /etc/XrayR/config.yml https://raw.githubusercontent.com/hcw1133/XrayR/main/config.yml
+        cp config.yml /etc/XrayR/
         echo -e ""
-        echo -e "全新安装，请先参看教程：https://crackair.gitbook.io/xrayr-project，配置必要的内容"
+        echo -e "全新安装，请先参看教程：https://github.com/XrayR-project/XrayR，配置必要的内容"
     else
         systemctl start XrayR
         sleep 2
@@ -138,21 +170,21 @@ install_XrayR() {
     fi
 
     if [[ ! -f /etc/XrayR/dns.json ]]; then
-        wget -q -N --no-check-certificate -O /etc/XrayR/dns.json https://raw.githubusercontent.com/hcw1133/XrayR/main/dns.json
+        cp dns.json /etc/XrayR/
     fi
     if [[ ! -f /etc/XrayR/route.json ]]; then
-        wget -q -N --no-check-certificate -O /etc/XrayR/route.json https://raw.githubusercontent.com/hcw1133/XrayR/main/route.json
+        cp route.json /etc/XrayR/
     fi
     if [[ ! -f /etc/XrayR/custom_outbound.json ]]; then
-        wget -q -N --no-check-certificate -O /etc/XrayR/custom_outbound.json https://raw.githubusercontent.com/hcw1133/XrayR/main/custom_outbound.json
+        cp custom_outbound.json /etc/XrayR/
     fi
-    #if [[ ! -f /etc/XrayR/custom_inbound.json ]]; then
-        #cp custom_inbound.json /etc/XrayR/
-    #fi
-    if [[ ! -f /etc/XrayR/rulelist ]]; then
-        wget -q -N --no-check-certificate -O /etc/XrayR/rulelist https://raw.githubusercontent.com/hcw1133/XrayR/main/rulelist
+    if [[ ! -f /etc/XrayR/custom_inbound.json ]]; then
+        cp custom_inbound.json /etc/XrayR/
     fi
-    curl -o /usr/bin/XrayR -Ls https://raw.githubusercontent.com/hcw1133/XrayR/main/XrayR.sh
+    if [[ ! -f /etc/XrayR/ruelist ]]; then
+        cp ruelist /etc/XrayR/
+    fi
+    curl -o /usr/bin/XrayR -Ls https://raw.githubusercontent.com/EdNovas/XrayR-release/master/XrayR.sh
     chmod +x /usr/bin/XrayR
     ln -s /usr/bin/XrayR /usr/bin/xrayr # 小写兼容
     chmod +x /usr/bin/xrayr
